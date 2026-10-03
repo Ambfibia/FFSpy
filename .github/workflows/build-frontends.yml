@@ -1,0 +1,40 @@
+name: Build XPlat Frontends
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Install dependencies
+      run: dotnet restore ILSpy.XPlat.slnf
+
+    - name: Build Debug
+      run: dotnet build ILSpy.XPlat.slnf --configuration Debug --no-restore
+
+    - name: Build Release ilspycmd
+      run: dotnet build ICSharpCode.Decompiler.Console/ICSharpCode.Decompiler.Console.csproj --configuration Release
+      
+    - name: Pack Release ilspycmd
+      run: dotnet pack ICSharpCode.Decompiler.Console/ICSharpCode.Decompiler.Console.csproj --configuration Release --no-restore
+
+    - name: Upload ilspycmd
+      uses: actions/upload-artifact@v2
+      with:
+        name: ilspycmd NuGet Package
+        path: ICSharpCode.Decompiler.Console/bin/Release/ilspycmd*.nupkg
+        if-no-files-found: error
